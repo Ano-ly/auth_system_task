@@ -8,7 +8,7 @@ import string
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import (
     create_access_token, jwt_required, get_jwt_identity,
-    create_refresh_token, jwt_refresh_token_required, get_jwt
+    create_refresh_token, get_jwt
 )
 from mail_service import send_email
 from roles import roles_required
@@ -114,7 +114,7 @@ def login_mfa_verify():
 
 
 @auth_bp.route('/token/refresh', methods=['POST'])
-@jwt_refresh_token_required()
+@jwt_required(refresh=True)
 def refresh():
     current_user_id = get_jwt_identity()
     new_access_token = create_access_token(identity=current_user_id)
