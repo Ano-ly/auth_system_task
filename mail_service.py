@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """mail service"""
+
 from flask_mail import Mail, Message
 from flask import current_app
 

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+"""Contains necessary app configurations"""
+
 import os
 from dotenv import load_dotenv
 
