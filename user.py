@@ -18,6 +18,10 @@ class User(db.Model):
 
     roles = db.Column(db.Text, default='["user"]')
 
+
+    reset_token = db.Column(db.String(32), unique=True, nullable=True)
+    reset_token_expiry = db.Column(db.DateTime, nullable=True)
+
     mfa_enabled = db.Column(db.Boolean, default=False)
     mfa_otp_code = db.Column(db.String(6), nullable=True)
     mfa_otp_expiry = db.Column(db.DateTime, nullable=True)

@@ -197,7 +197,7 @@ def refresh():
     tags:
       - Authentication
     security:
-      - Bearer: []
+      - Bearer Auth: []
     responses:
       200:
         description: New access token
@@ -215,7 +215,7 @@ def enable_mfa():
     tags:
       - MFA
     security:
-      - Bearer: []
+      - Bearer Auth: []
     responses:
       200:
         description: OTP sent for MFA enabling
@@ -249,7 +249,7 @@ def verify_mfa():
     tags:
       - MFA
     security:
-      - Bearer: []
+      - Bearer Auth: []
     parameters:
       - in: body
         name: body
@@ -303,7 +303,7 @@ def disable_mfa():
     tags:
       - MFA
     security:
-      - Bearer: []
+      - Bearer Auth: []
     parameters:
       - in: body
         name: body
@@ -421,11 +421,6 @@ def reset_password(token):
         return jsonify({"message": "Expired reset token"}), 400
 
 
-    email = data.get('email')
-    user = User.query.filter_by(email=email).first()
-    if not user:
-        return jsonify({"message": f"User with email {email} not found"}), 400
-
     user.set_password(new_password)
     user.reset_token = None
     user.reset_token_expiry = None
@@ -443,7 +438,7 @@ def manage_roles():
     tags:
       - Roles
     security:
-      - Bearer: []
+      - Bearer Auth: []
     parameters:
       - in: body
         name: body
@@ -474,7 +469,7 @@ def manage_roles():
     if not user_id or not action or not role_name:
         return jsonify({"message": "User ID, action (add/remove), and role name are required"}), 400
 
-    user = db.session.get(User, user_id)
+    user_to_modify = db.session.get(User, user_id)
     if not user_to_modify:
         return jsonify({"message": "User not found"}), 404
 
@@ -483,7 +478,7 @@ def manage_roles():
         db.session.commit()
         return jsonify({"message": f"Role '{role_name}' added to user {user_id}", "user_roles": user_to_modify.roles_to_string}), 200
     elif action == 'remove':
-        user_to_modify.remove_role(role_name)
+        user_to_modify.delete_role(role_name)
         db.session.commit()
         return jsonify({"message": f"Role '{role_name}' removed from user {user_id}", "user_roles": user_to_modify.roles_to_string}), 200
     else:

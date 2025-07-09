@@ -16,7 +16,27 @@ def create_app():
     bcrypt.init_app(app)
     jwt = JWTManager(app)
     mail.init_app(app)
-    Swagger(app)
+    swagger_template = {
+        "swagger": "2.0",
+        "info": {
+            "title": "Anom's User Authentication API",
+            "description": "A user authentication system",
+        },
+        "securityDefinitions": {
+            "Bearer Auth": {
+                "type": "apiKey",
+                "name": "Authorization",
+                "in": "header",
+                "description": "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\""
+            }
+        },
+        "security": [
+            { "Bearer Auth": [] }
+        ]
+    }
+
+
+    Swagger(app, template=swagger_template)
 
     @jwt.user_lookup_loader
     def user_lookup_callback(_jwt_header, jwt_data):
