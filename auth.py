@@ -369,17 +369,16 @@ def forgot_password():
 
     user = User.query.filter_by(email=email).first()
     if not user:
-        return jsonify({"message": "A password reset link has been sent."}), 200
+        return jsonify({"message": "A password reset token has been sent."}), 200
 
     reset_token = ''.join(random.choices(string.ascii_letters + string.digits, k=32))
     user.reset_token = reset_token
     user.reset_token_expiry = datetime.utcnow() + timedelta(minutes=20)
     db.session.commit()
 
-    reset_link = f"http://localhost:5000/api/auth/reset_password/{reset_token}"
-    send_email(user.email, "Password Reset Request", f"Click the link to reset your password: {reset_link}. This link is valid for 1 hour.")
+    send_email(user.email, "Password Reset Request Token", f"Use this token to reset your password: {reset_token}. This token is valid for 20 minutes.")
 
-    return jsonify({"message": f"A password reset link has been sent to {user.email}"}), 200
+    return jsonify({"message": f"A token has been sent to {user.email}"}), 200
 
 @auth_bp.route('/reset_password/<token>', methods=['POST'])
 def reset_password(token):
