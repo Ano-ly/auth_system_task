@@ -347,7 +347,7 @@ def disable_mfa():
 @auth_bp.route('/forgot_password', methods=['POST'])
 def forgot_password():
     """
-    Request a password reset link
+    Request a password reset
     ---
     tags:
       - Password
@@ -362,14 +362,14 @@ def forgot_password():
               type: string
     responses:
       200:
-        description: Password reset link sent
+        description: Password reset token sent
     """
     data = request.get_json()
     email = data.get('email')
 
     user = User.query.filter_by(email=email).first()
     if not user:
-        return jsonify({"message": "A password reset token has been sent."}), 200
+        return jsonify({"message": "User does not exist"}), 200
 
     reset_token = ''.join(random.choices(string.ascii_letters + string.digits, k=32))
     user.reset_token = reset_token
