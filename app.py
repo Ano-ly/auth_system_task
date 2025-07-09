@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 """Entry point of application"""
-
 import json
 from flask import Flask, jsonify
 from flask_jwt_extended import JWTManager
-from auth import auth_bp
 from config import Config
 from user import db, bcrypt, User
 from mail_service import mail
@@ -27,7 +25,7 @@ def create_app():
     def add_claims_to_access_token(identity):
         user = User.query.get(identity)
         if user:
-            return {"roles": user.parsed_roles}
+            return {"roles": user.roles_to_string}
         return {"roles": []}
 
     @jwt.unauthorized_loader
@@ -50,6 +48,7 @@ def create_app():
     def token_not_fresh_response(jwt_header, jwt_data):
         return jsonify({"message": "Fresh token required"}), 401
 
+    from auth import auth_bp
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
 
     return app

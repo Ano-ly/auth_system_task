@@ -76,8 +76,8 @@ def login():
         send_email(user.email, "OTP", f"Your one-time verification code is: {otp_code}. The OTP is valid for 5 minutes.")
         return jsonify({"message": "Check your email for an OTP.", "mfa_pending": True, "user_id": user.id}), 200
     else:
-        access_token = create_access_token(identity=user.id)
-        refresh_token = create_refresh_token(identity=user.id)
+        access_token = create_access_token(identity=str(user.id))
+        refresh_token = create_refresh_token(identity=str(user.id))
         return jsonify(access_token=access_token, refresh_token=refresh_token), 200
 
 @auth_bp.route('/login/mfa-verify', methods=['POST'])
@@ -91,8 +91,7 @@ def login_mfa_verify():
     if not otp_code:
         return jsonify({"message": "OTP code is required"}), 400
 
-    user = User.query.get(user_id)
-
+    user = db.session.get(User, user_id)
     if not user:
         return jsonify({"message": "User not found"}), 400
     if not user.mfa_enabled:
@@ -108,8 +107,8 @@ def login_mfa_verify():
     user.mfa_otp_expiry = None
     db.session.commit()
 
-    access_token = create_access_token(identity=user.id)
-    refresh_token = create_refresh_token(identity=user.id)
+    access_token = create_access_token(identity=str(user.id))
+    refresh_token = create_refresh_token(identity=str(user.id))
     return jsonify(access_token=access_token, refresh_token=refresh_token), 200
 
 
@@ -124,8 +123,7 @@ def refresh():
 @jwt_required()
 def enable_mfa():
     user_id = get_jwt_identity()
-    user = User.query.get(user_id)
-
+    user = db.session.get(User, int(user_id))
     if not user:
         return jsonify({"message": "User not found"}), 404
 
@@ -150,8 +148,7 @@ def verify_mfa():
     if not otp_code:
         return jsonify({"message": "OTP code is required"}), 400
 
-    user = User.query.get(user_id)
-
+    user = db.session.get(User, user_id)
     if not user:
         return jsonify({"message": "User not found"}), 404
 
@@ -177,8 +174,8 @@ def disable_mfa():
     data = request.get_json()
     password = data.get('password')
     user_id = get_jwt_identity()
-    user = User.query.get(user_id)
 
+    user = db.session.get(User, user_id)
     if not user:
         return jsonify({"message": "User not found"}), 404
 
@@ -254,7 +251,7 @@ def manage_roles():
     if not user_id or not action or not role_name:
         return jsonify({"message": "User ID, action (add/remove), and role name are required"}), 400
 
-    user_to_modify = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user_to_modify:
         return jsonify({"message": "User not found"}), 404
 
