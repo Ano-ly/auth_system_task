@@ -60,4 +60,4 @@ if __name__ == '__main__':
         db.create_all()
         print("Database tables created/checked.")
 
-    app.run(debug=True, port=5000)
+    app.run(port="5000", host="0.0.0.0")
