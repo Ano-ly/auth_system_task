@@ -21,6 +21,34 @@ def generate_otp():
 
 @auth_bp.route('/register', methods=['POST'])
 def register():
+    """
+    Register a new user
+    ---
+    tags:
+      - Authentication
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            email:
+              type: string
+            password:
+              type: string
+            roles:
+              type: array
+              items:
+                type: string
+    responses:
+      201:
+        description: User registered successfully
+      400:
+        description: Missing or invalid input
+      409:
+        description: User already exists
+    """
     data = request.get_json()
     email = data.get('email')
     password = data.get('password')
@@ -49,6 +77,30 @@ def register():
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
+    """
+    User login
+    ---
+    tags:
+      - Authentication
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            email:
+              type: string
+            password:
+              type: string
+    responses:
+      200:
+        description: Login successful, returns access and refresh tokens or MFA required
+      400:
+        description: Missing input
+      401:
+        description: Invalid credentials
+    """
     data = request.get_json()
     email = data.get('email')
     password = data.get('password')
@@ -82,6 +134,30 @@ def login():
 
 @auth_bp.route('/login/mfa-verify', methods=['POST'])
 def login_mfa_verify():
+    """
+    Verify MFA code during login
+    ---
+    tags:
+      - Authentication
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            user_id:
+              type: integer
+            otp_code:
+              type: string
+    responses:
+      200:
+        description: MFA verified, returns tokens
+      400:
+        description: Missing or invalid input
+      401:
+        description: Invalid or expired OTP
+    """
     data = request.get_json()
     user_id = data.get('user_id')
     otp_code = data.get('otp_code')
@@ -115,6 +191,17 @@ def login_mfa_verify():
 @auth_bp.route('/token/refresh', methods=['POST'])
 @jwt_required(refresh=True)
 def refresh():
+    """
+    Refresh access token
+    ---
+    tags:
+      - Authentication
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: New access token
+    """
     current_user_id = get_jwt_identity()
     new_access_token = create_access_token(identity=current_user_id)
     return jsonify(access_token=new_access_token), 200
@@ -122,6 +209,21 @@ def refresh():
 @auth_bp.route('/mfa/enable', methods=['POST'])
 @jwt_required()
 def enable_mfa():
+    """
+    Enable MFA for the current user
+    ---
+    tags:
+      - MFA
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: OTP sent for MFA enabling
+      400:
+        description: MFA already enabled
+      404:
+        description: User not found
+    """
     user_id = get_jwt_identity()
     user = db.session.get(User, int(user_id))
     if not user:
@@ -141,6 +243,30 @@ def enable_mfa():
 @auth_bp.route('/mfa/verify', methods=['POST'])
 @jwt_required()
 def verify_mfa():
+    """
+    Verify OTP to enable MFA
+    ---
+    tags:
+      - MFA
+    security:
+      - Bearer: []
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            otp_code:
+              type: string
+    responses:
+      200:
+        description: MFA enabled
+      400:
+        description: Invalid or expired OTP
+      404:
+        description: User not found
+    """
     data = request.get_json()
     otp_code = data.get('otp_code')
     user_id = get_jwt_identity()
@@ -171,6 +297,32 @@ def verify_mfa():
 @auth_bp.route('/mfa/disable', methods=['POST'])
 @jwt_required()
 def disable_mfa():
+    """
+    Disable MFA for the current user
+    ---
+    tags:
+      - MFA
+    security:
+      - Bearer: []
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            password:
+              type: string
+    responses:
+      200:
+        description: MFA disabled
+      400:
+        description: MFA not enabled or invalid password
+      401:
+        description: Incorrect password
+      404:
+        description: User not found
+    """
     data = request.get_json()
     password = data.get('password')
     user_id = get_jwt_identity()
@@ -194,6 +346,24 @@ def disable_mfa():
 
 @auth_bp.route('/forgot_password', methods=['POST'])
 def forgot_password():
+    """
+    Request a password reset link
+    ---
+    tags:
+      - Password
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            email:
+              type: string
+    responses:
+      200:
+        description: Password reset link sent
+    """
     data = request.get_json()
     email = data.get('email')
 
@@ -213,6 +383,30 @@ def forgot_password():
 
 @auth_bp.route('/reset_password/<token>', methods=['POST'])
 def reset_password(token):
+    """
+    Reset password using token
+    ---
+    tags:
+      - Password
+    parameters:
+      - in: path
+        name: token
+        required: true
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            new_password:
+              type: string
+    responses:
+      200:
+        description: Password reset successful
+      400:
+        description: Invalid or expired token
+    """
     data = request.get_json()
     new_password = data.get('new_password')
 
@@ -243,6 +437,35 @@ def reset_password(token):
 @jwt_required()
 @roles_required('admin')
 def manage_roles():
+    """
+    Manage user roles (admin only)
+    ---
+    tags:
+      - Roles
+    security:
+      - Bearer: []
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            user_id:
+              type: integer
+            action:
+              type: string
+              enum: [add, remove]
+            role_name:
+              type: string
+    responses:
+      200:
+        description: Role updated
+      400:
+        description: Missing or invalid input
+      404:
+        description: User not found
+    """
     data = request.get_json()
     user_id = data.get('user_id')
     action = data.get('action')

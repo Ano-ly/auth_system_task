@@ -6,6 +6,7 @@ from flask_jwt_extended import JWTManager
 from config import Config
 from user import db, bcrypt, User
 from mail_service import mail
+from flasgger import Swagger
 
 def create_app():
     app = Flask(__name__)
@@ -15,6 +16,7 @@ def create_app():
     bcrypt.init_app(app)
     jwt = JWTManager(app)
     mail.init_app(app)
+    Swagger(app)
 
     @jwt.user_lookup_loader
     def user_lookup_callback(_jwt_header, jwt_data):
